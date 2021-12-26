@@ -235,10 +235,12 @@ class DjangoJobStore(DjangoResultStoreMixin, BaseJobStore):
     def add_job(self, job: AppSchedulerJob):
         with transaction.atomic():
             try:
-                return DjangoJob.objects.create(
-                    id=job.id,
-                    next_run_time=get_django_internal_datetime(job.next_run_time),
-                    job_state=pickle.dumps(job.__getstate__(), self.pickle_protocol),
+                return DjangoJob.objects.update_or_create(
+                    defaults=
+                    {'id':job.id,
+                     'next_run_time':get_django_internal_datetime(job.next_run_time),
+                     'job_state':pickle.dumps(job.__getstate__(), self.pickle_protocol)},
+                    id=job.id
                 )
             except IntegrityError:
                 raise ConflictingIdError(job.id)
